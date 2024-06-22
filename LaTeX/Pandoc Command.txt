@@ -1,0 +1,1 @@
+pandoc -f latex -t docx --citeproc --csl="G:\My Drive\Zotero\styles\apa.csl" --bibliography="C:\Users\giegi\OneDrive - The Ohio State University\Qin\Manuscript\Draft\LaTeX\SyntheticCanopy.bib" "C:\Users\giegi\OneDrive - The Ohio State University\Qin\Manuscript\Draft\LaTeX\Lit Review and Methods - Isaac Gabriel - Synthetic Canopy.tex" -o draft.docx 
