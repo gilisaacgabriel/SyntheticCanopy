@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "m2m-api",
+			"path": "../../m2m-api"
+		}
+	],
+	"settings": {}
+}

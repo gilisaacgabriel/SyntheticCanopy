@@ -21,14 +21,14 @@ import datetime
 import threading
 import re
 
-path = "" # Fill a valid path to save the downloaded files
+path = "G:\GDA\GIS\LandsatDOWNLOAD" # Fill a valid path to save the downloaded files
 maxthreads = 5 # Threads count for downloads
 sema = threading.Semaphore(value=maxthreads)
 label = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") # Customized label using date time
 threads = []
 
 # send http request
-def sendRequest(url, data, apiKey = None):  
+def sendRequest(url, data, apiKey = KjNubaBqu96J9zVqSg_fu_!@OXB9tgJkh_7AsyaVy_4iRjJpzlIQw0D1Qu_F6Ut1):  
     pos = url.rfind('/') + 1
     endpoint = url[pos:]
     json_data = json.dumps(data)
