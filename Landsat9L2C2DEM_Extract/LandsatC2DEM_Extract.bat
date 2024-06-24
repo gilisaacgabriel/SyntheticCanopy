@@ -1,0 +1,1 @@
+landsatxplore search --help

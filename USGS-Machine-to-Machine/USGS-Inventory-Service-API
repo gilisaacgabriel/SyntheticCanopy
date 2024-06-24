@@ -20,15 +20,17 @@ import argparse
 import datetime
 import threading
 import re
+import pickle
+import os
 
-path = "G:\GDA\GIS\LandsatDOWNLOAD" # Fill a valid path to save the downloaded files
+path = r"K:\GDA\GIS\LandsatDOWNLOAD" # Fill a valid path to save the downloaded files
 maxthreads = 5 # Threads count for downloads
 sema = threading.Semaphore(value=maxthreads)
 label = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") # Customized label using date time
 threads = []
 
 # send http request
-def sendRequest(url, data, apiKey = KjNubaBqu96J9zVqSg_fu_!@OXB9tgJkh_7AsyaVy_4iRjJpzlIQw0D1Qu_F6Ut1):  
+def sendRequest(url, data, apiKey=None):  
     pos = url.rfind('/') + 1
     endpoint = url[pos:]
     json_data = json.dumps(data)
@@ -97,35 +99,66 @@ if __name__ == '__main__':
     #        should be gathered in a more secure way for production usage
     #Define the command line arguements
     
-    # user input    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-u', '--username', required=True, help='Username')
-    parser.add_argument('-p', '--password', required=True, help='Password')
-    
-    args = parser.parse_args()
-    
-    username = args.username
-    password = args.password     
+    serviceUrl = "https://m2m.cr.usgs.gov/api/api/json/stable/"
 
+    # user input    
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('-u', '--username', required=False, help='Username', default=None)
+    # parser.add_argument('-p', '--password', required=False, help='Password', default=None)
+    
+    
+    # args = parser.parse_args()
+    
+    # username = args.username
+    # password = args.password     
+
+    username = "gilisaacgabriel"
+    password = "winqiT-zecji8-tykjuf"
+    
+    # username = "giegisaac@hotmail.com"
+    # password = "Z?8FS,r6B$fGG3Y"
+        
     print("\nRunning Scripts...\n")
     
-    serviceUrl = "https://m2m.cr.usgs.gov/api/api/json/stable/"
+    requestResults = None
+    if True:
+        with open('requestResults', 'rb') as inFyle:
+            requestResults = pickle.load(inFyle)
+        print("Results count: " + str(len(requestResults)))
+        sess = requests.Session()
+        # Cheating, going through the results which include an ID and a URL, and downloading each manually
+        for download in requestResults['availableDownloads']:
+            fylename = os.path.abspath(path + '/' + str(download['downloadId']) + ".zip")
+            print("Checking: " + str(download['downloadId']))
+            if not os.path.exists(fylename):
+                # result = sess.get(download['url'])
+                result = requests.get(download['url'])
+
+                print("SAVING: " + fylename)
+                outFyle = open(fylename, 'wb')
+                for chunk in result.iter_content(chunk_size=1024*1024):
+                    if chunk:
+                        outFyle.write(chunk)
+        print("Done?")
+        exit()
+                
     
     # login
     payload = {'username' : username, 'password' : password}
-    
+    print("Getting API Key")
     apiKey = sendRequest(serviceUrl + "login", payload)
     
     print("API Key: " + apiKey + "\n")
     
-    datasetName = "gls_all"
+    datasetName = "gls2000_dem"
     
     spatialFilter =  {'filterType' : "mbr",
                       'lowerLeft' : {'latitude' : 30, 'longitude' : -120},
                       'upperRight' : { 'latitude' : 40, 'longitude' : -140}}
                      
     temporalFilter = {'start' : '2000-12-10', 'end' : '2005-12-10'}
-    
+    spatialFilter = None
+    temporalFilter = None
     payload = {'datasetName' : datasetName,
                                'spatialFilter' : spatialFilter,
                                'temporalFilter' : temporalFilter}                     
@@ -152,11 +185,12 @@ if __name__ == '__main__':
                              "start": "2000-12-10" }        
             
         payload = {'datasetName' : dataset['datasetAlias'], 
-                                 'maxResults' : 2,
+                                 'maxResults' : 20000,
                                  'startingNumber' : 1, 
-                                 'sceneFilter' : {
-                                                  'spatialFilter' : spatialFilter,
-                                                  'acquisitionFilter' : acquisitionFilter}}
+                                #  'sceneFilter' : {
+                                #                   'spatialFilter' : spatialFilter,
+                                #                   'acquisitionFilter' : acquisitionFilter}
+                                 }
         
         # Now I need to run a scene search to find data to download
         print("Searching scenes...\n\n")   
@@ -182,18 +216,37 @@ if __name__ == '__main__':
             for product in downloadOptions:
                     # Make sure the product is available for this scene
                     if product['available'] == True:
-                         downloads.append({'entityId' : product['entityId'],
+                        print("Append entityId: " + str(product['entityId']) + " -- productId: " + str(product['id']))
+                        downloads.append({'entityId' : product['entityId'],
                                            'productId' : product['id']})
                          
             # Did we find products?
             if downloads:
                 requestedDownloadsCount = len(downloads)
+                print("requestedDownloadsCount: " + str(requestedDownloadsCount))
                 # set a label for the download request
                 label = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") # Customized label using date time
                 payload = {'downloads' : downloads,
                                              'label' : label}
                 # Call the download to get the direct download urls
-                requestResults = sendRequest(serviceUrl + "download-request", payload, apiKey)          
+                print("Sending download-request...")
+                requestResults = sendRequest(serviceUrl + "download-request", payload, apiKey)        
+                with open('requestResults', 'wb') as outFyle:
+                    pickle.dump(requestResults, outFyle, pickle.HIGHEST_PROTOCOL)  
+                sess = requests.Session()
+                # Cheating, going through the results which include an ID and a URL, and downloading each manually
+                for download in requestResults['availableDownloads']:
+                    result = sess.get(download['url'])
+                    print("SAVING: " + path + '/' + str(download['downloadId']) + ".zip")
+                    outFyle = open(os.path.abspath(path + '/' + str(download['downloadId']) + ".zip"), 'wb')
+                    for chunk in result.iter_content(chunk_size=1024*1024):
+                        if chunk:
+                            outFyle.write(chunk)
+                    # with open(os.path.abspath(path + '/' + str(download['downloadId']) + ".zip"), 'wb' ) as outFyle:
+                    #     print("SAVING: " + path + '/' + str(download['downloadId']) + ".zip")
+                    #     outFyle.write(result.raw)
+                print("Done?")
+                
                               
                 # PreparingDownloads has a valid link that can be used but data may not be immediately available
                 # Call the download-retrieve method to get download that is available for immediate download
@@ -206,11 +259,13 @@ if __name__ == '__main__':
                     for download in moreDownloadUrls['available']:
                         if str(download['downloadId']) in requestResults['newRecords'] or str(download['downloadId']) in requestResults['duplicateProducts']:
                             downloadIds.append(download['downloadId'])
+                            print("Starting downloadId: " + str(download['downloadId']))
                             runDownload(threads, download['url'])
                         
                     for download in moreDownloadUrls['requested']:
                         if str(download['downloadId']) in requestResults['newRecords'] or str(download['downloadId']) in requestResults['duplicateProducts']:
                             downloadIds.append(download['downloadId'])
+                            print("Starting downloadId: " + str(download['downloadId']))
                             runDownload(threads, download['url'])
                      
                     # Didn't get all of the reuested downloads, call the download-retrieve method again probably after 30 seconds
@@ -228,6 +283,7 @@ if __name__ == '__main__':
                 else:
                     # Get all available downloads
                     for download in requestResults['availableDownloads']:
+                        print("Downloading url: " + str(download['url']))
                         runDownload(threads, download['url'])
         else:
             print("Search found no results.\n")

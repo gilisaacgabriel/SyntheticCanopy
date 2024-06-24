@@ -1,0 +1,73 @@
+import os
+import sys
+import pickle
+import requests
+from time import gmtime, strftime, sleep
+from ratelimit import limits, sleep_and_retry
+
+# Open the saved results file and load into memory
+with open('requestResults', 'rb') as inFyle:
+    requestResults = pickle.load(inFyle)
+
+# ISAAC Update this as appropriate
+download_directory = os.path.realpath(os.path.expanduser(r"K:\GDA\GIS\LandsatDOWNLOAD"))
+
+if not os.path.exists(download_directory):
+    # Make the directory if it doesn't exist
+    os.mkdir(download_directory)
+
+failures = []
+successes = 0
+@sleep_and_retry
+@limits(calls=200, period=300) # Limit to 200 calls within 300 seconds (5 minutes)
+def do_download_url(url, download_to):
+    # Put the get in a function so we can ratelimit
+    sleep(1) # For good measure lol
+    result = requests.get(download['url'], stream=True)
+    outFyle = open(download_to, 'wb')
+    # Save it (in chunks as its downloaded)
+    for chunk in result.iter_content(chunk_size=1024 * 1024 * 1024):
+        if chunk:
+            outFyle.write(chunk)
+    return result
+
+for download in requestResults['availableDownloads']:
+    # Specify the full path and file name where to save the file
+    download_to = download_directory + '/' + str(download['downloadId']) + '.zip'
+    if not os.path.exists(download_to):
+        # Don't re-download if we already have
+        print(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + ' - ' + "Downloading ID: " + str(download['downloadId']))
+        try:
+            result = do_download_url(download['url'], download_to)
+            # Open the file for writing binary
+            # outFyle = open(download_to, 'wb')
+            # # Save it (in chunks as its downloaded)
+            # for chunk in result.iter_content(chunk_size=1024 * 1024):
+            #     if chunk:
+            #         outFyle.write(chunk)
+            successes += 1
+        except:
+            # Capture a list of failures
+            failures.append(download)
+            print(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " !!! ERROR !!! - Failed to download " + str(download['downloadId']))
+            print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
+        print(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + ' - ' + "Complete")
+    else:
+        print(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + ' - ' + "ALREADY EXISTS: " + str(download['downloadId']))
+
+
+
+print("----------------\n")
+if len(failures) > 0:
+    print("!!! FAILURES BELOW:")
+    for failed in failures:
+        print(" - " + str(failed['downloadId']) + ' : ' + failed['url'])
+print("*** COMPLETED AT " + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+print("Total files: " + str(len(requestResults['availableDownloads'])))
+print("Attempted:   " + str(successes + len(failures)))
+print("Succeeded:   " + str(successes))
+print("Failed:      " + str(len(failures)))
+
+
+print("Pause")
