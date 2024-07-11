@@ -27,6 +27,6 @@ def merge_images(source_directory, output_file):
     print(f"Composite image saved as {output_file}")
 
 if __name__ == "__main__":
-    source_directory = './source_folder'  # Change this to your source folder containing DTM images
-    output_file = './composite_image.tif'  # Change this to your desired output file path
+    source_directory = r"K:\GDA\GIS\LandsatEXTRACT"  # Change this to your source folder containing DTM images
+    output_file = r"K:\GDA\GIS\LandsatDEM_composite_image.tif"  # Change this to your desired output file path
     merge_images(source_directory, output_file)

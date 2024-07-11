@@ -9,7 +9,6 @@ for thing in requestResults['availableDownloads']:
     # Makes a dictionary out of the results
     downloadId = thing['downloadId']
     downloadUrl = thing['url']
-    datasetAlias = thing['datasetAlias']
     lookup_dict[downloadId] = downloadUrl
 
 

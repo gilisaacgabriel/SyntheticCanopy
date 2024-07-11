@@ -55,5 +55,5 @@ def run_download_script():
         print(f"An error occurred while running M2M-Download-API: {e}")
 
 if __name__ == "__main__":
-    directory_to_check = r"K:\GDA\GIS\LandsatDOWNLOAD"  # Change this to the directory containing your zip files
+    directory_to_check = r"J:\GDA\GIS\LandsatDOWNLOAD"  # Change this to the directory containing your zip files
     validate_zip_files(directory_to_check)

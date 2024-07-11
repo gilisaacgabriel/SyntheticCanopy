@@ -24,8 +24,13 @@ parser.add_argument('-dir', '--directory', required=False, help='Specify directo
 parser.add_argument('-f', '--files', required=False, help='A single granule URL, or the location of csv or textfile containing granule URLs')
 args = parser.parse_args()
 
+<<<<<<< HEAD
 saveDir = ".\SRTMContinue" ### "D:\\gabriel.245\\SRTMGL1V3" args.directory  Set local directory to download to
 # files = "5284734767-download.txt" # args.files        # Define file(s) to download from the LP DAAC Data Pool
+=======
+saveDir = "D:\gabriel.245\SRTMGL1V3" # args.directory  # Set local directory to download to
+files = "5284734767-download.txt" # args.files        # Define file(s) to download from the LP DAAC Data Pool
+>>>>>>> a2a4431ffc544f0f6bb51a3bfbfa063d649769c0
 prompts = ['Enter NASA Earthdata Login Username \n(or create an account at urs.earthdata.nasa.gov): ',
            'Enter NASA Earthdata Login Password: ']
 

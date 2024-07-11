@@ -10,7 +10,7 @@ with open('requestResults', 'rb') as inFyle:
     requestResults = pickle.load(inFyle)
 
 # ISAAC Update this as appropriate
-download_directory = os.path.realpath(os.path.expanduser(r"K:\GDA\GIS\LandsatDOWNLOAD"))
+download_directory = os.path.realpath(os.path.expanduser(r"J:\GDA\GIS\LandsatDOWNLOAD"))
 
 if not os.path.exists(download_directory):
     # Make the directory if it doesn't exist
