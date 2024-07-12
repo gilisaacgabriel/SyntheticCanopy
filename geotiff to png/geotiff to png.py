@@ -1,5 +1,5 @@
 import os
-from osgeo import gdal
+import gdal
 import numpy as np
 from PIL import Image
 
@@ -37,8 +37,8 @@ def geotiff_to_png(input_folder, output_folder):
     print("Conversion complete.")
 
 # Specify input and output folders
-input_folder = "input_folder_path"
-output_folder = "output_folder_path"
+input_folder = r"C:\Users\giegi\OneDrive - The Ohio State University\Qin\LandsatDEM-1kmsq"
+output_folder = r"C:\Users\giegi\OneDrive - The Ohio State University\Qin\LandsatDEM-1kmsq\PNGs"
 
 # Convert GeoTIFF files to PNG
 geotiff_to_png(input_folder, output_folder)
