@@ -6,8 +6,10 @@ import os
 from osgeo import gdal
 import numpy as np
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 CHECKPOINT_FILE = 'checkpoint.json'
+MAX_WORKERS = 8  # Adjust this based on your system's capabilities
 
 def load_checkpoint():
     if os.path.exists(CHECKPOINT_FILE):
@@ -42,6 +44,18 @@ def bil_to_geotiff(source_directory, destination_directory, square_size_km=1):
         save_checkpoint(current_file, current_square)
         print(f"Finished processing {file_path}")
 
+def process_square(subset, output_path, projection, geotransform, nodata):
+    driver = gdal.GetDriverByName('GTiff')
+    out_raster = driver.Create(output_path, subset.shape[1], subset.shape[0], 1, gdal.GDT_Float32)
+    out_raster.SetGeoTransform(geotransform)
+    out_raster.SetProjection(projection)
+    outband = out_raster.GetRasterBand(1)
+    outband.WriteArray(subset)
+    if nodata is not None:
+        outband.SetNoDataValue(nodata)
+    outband.FlushCache()
+    out_raster = None
+
 def process_bil_file(file_path, destination_directory, square_size_km, current_file_idx, start_square_idx):
     dataset = gdal.Open(file_path)
     if dataset is None:
@@ -64,47 +78,49 @@ def process_bil_file(file_path, destination_directory, square_size_km, current_f
     total_squares = (cols // pixels_per_square_x) * (rows // pixels_per_square_y)
     current_square = start_square_idx
 
-    for i in range(0, cols, pixels_per_square_x):
-        for j in range(0, rows, pixels_per_square_y):
-            if current_square < start_square_idx:
+    futures = []
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        for i in range(0, cols, pixels_per_square_x):
+            for j in range(0, rows, pixels_per_square_y):
+                if current_square < start_square_idx:
+                    current_square += 1
+                    continue
+
+                min_lon = geotransform[0] + i * pixel_width
+                max_lat = geotransform[3] + j * pixel_height
+                center_lon = min_lon + (pixels_per_square_x * pixel_width) / 2
+                center_lat = max_lat + (pixels_per_square_y * pixel_height) / 2
+
+                filename = f"{center_lat:.6f}_{center_lon:.6f}.tif"
+                output_path = os.path.join(destination_directory, filename)
+
+                if os.path.exists(output_path):
+                    print(f"Skipping existing file: {output_path}")
+                    current_square += 1
+                    continue
+
+                subset = data[j:j + pixels_per_square_y, i:i + pixels_per_square_x]
+                if nodata is not None:
+                    subset[subset == nodata] = np.nan
+
+                if subset.size == 0:
+                    continue
+
+                geotransform_subset = (min_lon, pixel_width, 0, max_lat, 0, pixel_height)
+                futures.append(executor.submit(process_square, subset, output_path, projection, geotransform_subset, nodata))
+
                 current_square += 1
-                continue
 
-            min_lon = geotransform[0] + i * pixel_width
-            max_lat = geotransform[3] + j * pixel_height
-            center_lon = min_lon + (pixels_per_square_x * pixel_width) / 2
-            center_lat = max_lat + (pixels_per_square_y * pixel_height) / 2
+                if len(futures) >= MAX_WORKERS * 2:  # Limit number of queued futures to avoid memory issues
+                    for future in as_completed(futures):
+                        future.result()
+                    futures = []
 
-            filename = f"{center_lat:.6f}_{center_lon:.6f}.tif"
-            output_path = os.path.join(destination_directory, filename)
-
-            if os.path.exists(output_path):
-                print(f"Skipping existing file: {output_path}")
-                current_square += 1
-                continue
-
-            subset = data[j:j + pixels_per_square_y, i:i + pixels_per_square_x]
-            if nodata is not None:
-                subset[subset == nodata] = np.nan
-
-            if subset.size == 0:
-                continue
-
-            driver = gdal.GetDriverByName('GTiff')
-            out_raster = driver.Create(output_path, pixels_per_square_x, pixels_per_square_y, 1, gdal.GDT_Float32)
-            out_raster.SetGeoTransform((min_lon, pixel_width, 0, max_lat, 0, pixel_height))
-            out_raster.SetProjection(projection)
-            outband = out_raster.GetRasterBand(1)
-            outband.WriteArray(subset)
-            if nodata is not None:
-                outband.SetNoDataValue(nodata)
-
-            outband.FlushCache()
-            out_raster = None
-
-            current_square += 1
             save_checkpoint(current_file_idx, current_square)
             print(f"Processed {current_square}/{total_squares} squares from {file_path}")
+
+        for future in as_completed(futures):
+            future.result()
 
 if __name__ == "__main__":
     source_directory = r"J:\GDA\GIS\LandsatEXTRACT"  # Change this to your source folder containing .bil files
