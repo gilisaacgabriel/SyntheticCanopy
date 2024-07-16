@@ -1,0 +1,47 @@
+import OpenEXR
+import Imath
+import numpy as np
+import imageio
+import os
+
+def exr_to_tif(exr_path, tif_path):
+    # Open the EXR file
+    exr_file = OpenEXR.InputFile(exr_path)
+
+    # Get the data window of the EXR file
+    data_window = exr_file.header()['dataWindow']
+    width = data_window.max.x - data_window.min.x + 1
+    height = data_window.max.y - data_window.min.y + 1
+
+    # Define the channels (assuming depth is stored in RGB channels)
+    channels = ['R', 'G', 'B']
+    
+    # Read the pixel data for each channel
+    pt = Imath.PixelType(Imath.PixelType.FLOAT)
+    channel_data = [np.frombuffer(exr_file.channel(c, pt), dtype=np.float32) for c in channels]
+    
+    # Reshape the channel data to the image size
+    channel_data = [c.reshape((height, width)) for c in channel_data]
+    
+    # Average the RGB channels to get the grayscale depth map
+    depth_data = np.mean(np.stack(channel_data, axis=-1), axis=-1)
+    
+    # Normalize depth data for better visualization
+    min_val = np.min(depth_data)
+    max_val = np.max(depth_data)
+    depth_data_normalized = (depth_data - min_val) / (max_val - min_val)
+    
+    # Convert the image data to uint16 for TIFF format
+    depth_data_uint16 = (depth_data_normalized * 65535).astype(np.uint16)
+    
+    # Save the image as TIFF
+    imageio.imwrite(tif_path, depth_data_uint16)
+
+# Example usage
+# exr_path = r'I:\GDA\UnrealEngine\SyntheticCanopies\Saved\MovieRenders\2024.07.09 - 14.17.22 - n06e019-600m-NewLevelSequence_020 - PathTracerCustomDepthMovieRender.exr'
+# exr_path = r'D:\gabriel.245\OneDrive - The Ohio State University\Qin\Final Presentation\7.14\2024.07.14 - 23.22.47 - n06e019-600mlandscape-NewLevelSequence_000 - PathTracerAbsoluteWorldZPositionMovieRender.exr'
+exr_path = r'I:\GDA\UnrealEngine\SyntheticCanopies\Saved\MovieRenders\2024.07.09 - 14.17.22 - n06e019-600m-NewLevelSequence_022 - PathTracerAbsoluteWorldZPositionMovieRender.exr'
+tif_path = 'DSM.tif'
+exr_to_tif(exr_path, tif_path)
+
+print(f"Converted {exr_path} to {tif_path}")
