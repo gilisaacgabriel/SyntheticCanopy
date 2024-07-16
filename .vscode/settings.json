@@ -1,3 +1,4 @@
 {
-    "python.createEnvironment.contentButton": "show"
+    "python.createEnvironment.contentButton": "show",
+    "python.analysis.typeCheckingMode": "basic"
 }
