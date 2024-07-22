@@ -40,8 +40,10 @@ def exr_to_tif(exr_path, tif_path):
 # Example usage
 # exr_path = r'I:\GDA\UnrealEngine\SyntheticCanopies\Saved\MovieRenders\2024.07.09 - 14.17.22 - n06e019-600m-NewLevelSequence_020 - PathTracerCustomDepthMovieRender.exr'
 # exr_path = r'D:\gabriel.245\OneDrive - The Ohio State University\Qin\Final Presentation\7.14\2024.07.14 - 23.22.47 - n06e019-600mlandscape-NewLevelSequence_000 - PathTracerAbsoluteWorldZPositionMovieRender.exr'
-exr_path = r'I:\GDA\UnrealEngine\SyntheticCanopies\Saved\MovieRenders\2024.07.09 - 14.17.22 - n06e019-600m-NewLevelSequence_022 - PathTracerAbsoluteWorldZPositionMovieRender.exr'
-tif_path = 'DSM.tif'
-exr_to_tif(exr_path, tif_path)
+# exr_path = r'I:\GDA\UnrealEngine\SyntheticCanopies\Saved\MovieRenders\2024.07.09 - 14.17.22 - n06e019-600m-NewLevelSequence_022 - PathTracerAbsoluteWorldZPositionMovieRender.exr'
+exr_path = r'I:\GDA\UnrealEngine\SyntheticCanopies\Saved\MovieRenders\Jul22\Orthographic3\2024.07.22 - 04.34.13 - 56_750417__56_349583_11 - PathTracerAbsoluteZPosition-DEPTH.exr'
+# tif_path = 'DSM.tif'
+tif_path = r'D:\gabriel.245\OneDrive - The Ohio State University\Qin\Poster\Orthographic\2024.07.22 - 04.34.13 - 56_750417__56_349583_11 - PathTracerAbsoluteZPosition-DEPTH.tif' 
+exr_to_tif(exr_path, tif_path) 
 
 print(f"Converted {exr_path} to {tif_path}")

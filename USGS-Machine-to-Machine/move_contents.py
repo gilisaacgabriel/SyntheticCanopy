@@ -5,7 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 MAX_WORKERS = 16  # Adjust based on your system's capabilities
 BATCH_SIZE = 1000  # Number of files to process in each batch, adjust based on file size and memory usage
 
-def move_files_batch(files_batch):
+def move_files_batch(files_batch, batch_number):
+    print(f"Processing batch {batch_number} with {len(files_batch)} files")
     for source, destination in files_batch:
         try:
             if not os.path.exists(os.path.dirname(destination)):
@@ -14,6 +15,7 @@ def move_files_batch(files_batch):
             print(f"Moved {source} to {destination}")
         except Exception as e:
             print(f"Error moving {source} to {destination}: {e}")
+    print(f"Finished processing batch {batch_number}")
 
 def move_contents(source_directory, destination_directory):
     files_to_move = []
@@ -30,13 +32,15 @@ def move_contents(source_directory, destination_directory):
     batches = [files_to_move[i:i + BATCH_SIZE] for i in range(0, total_files, BATCH_SIZE)]
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_batch = {executor.submit(move_files_batch, batch): batch for batch in batches}
+        future_to_batch = {executor.submit(move_files_batch, batch, batch_num): batch for batch_num, batch in enumerate(batches, 1)}
 
         for future in as_completed(future_to_batch):
             try:
                 future.result()
             except Exception as e:
                 print(f"Batch failed with exception: {e}")
+
+    print("All files have been moved.")
 
 if __name__ == "__main__":
     source_directory = r"C:\Landsat-OneTenthDegSqs"
